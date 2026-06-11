@@ -9,12 +9,11 @@ function timeAgo(iso) {
   return `${Math.floor(diff / 86400)}일 전`
 }
 
-export default function LeaderboardPage({ winner, nickname, onHome }) {
+export default function LeaderboardPage({ winner, nickname, myEntryId, onHome }) {
   const [entries, setEntries] = useState(null)
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState('')
   const [filter, setFilter]   = useState('all') // 'all' | 'same'
-  const myName = nickname || '익명'
 
   useEffect(() => {
     if (!supabase) {
@@ -134,7 +133,7 @@ export default function LeaderboardPage({ winner, nickname, onHome }) {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {filtered.map((entry, i) => {
-            const isMe = entry.player === myName
+            const isMe = myEntryId ? entry.id === myEntryId : false
             const isSame = entry.celeb_name === winner?.name
             return (
               <div key={entry.id} style={{
@@ -151,16 +150,7 @@ export default function LeaderboardPage({ winner, nickname, onHome }) {
                 animation: `fadeUp .35s ${Math.min(i * 0.03, 0.5)}s ease both`,
                 position: 'relative',
               }}>
-                {isMe && (
-                  <div style={{
-                    position: 'absolute', top: 12, right: 14,
-                    background: 'rgba(236,72,153,.18)', border: '1px solid rgba(236,72,153,.3)',
-                    borderRadius: 100, padding: '2px 10px',
-                    color: '#f9a8d4', fontSize: 10, fontWeight: 700,
-                  }}>내 글</div>
-                )}
-
-                {/* 상단: 닉네임 + 아이돌 + 시간 */}
+                  {/* 상단: 닉네임 + 아이돌 + 시간/내글 */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: entry.message ? 8 : 0 }}>
                   <div style={{
                     width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
@@ -177,7 +167,6 @@ export default function LeaderboardPage({ winner, nickname, onHome }) {
                       color: isMe ? '#f9a8d4' : 'rgba(255,255,255,.9)',
                       fontWeight: 700, fontSize: 13,
                     }}>{entry.player || '익명'}</span>
-                    {/* 전체 탭에서만 아이돌 표시 (그룹명 포함하여 동명이인 구분) */}
                     {filter === 'all' && entry.celeb_name && (
                       <span style={{
                         marginLeft: 8, fontSize: 11,
@@ -191,9 +180,19 @@ export default function LeaderboardPage({ winner, nickname, onHome }) {
                     )}
                   </div>
 
-                  <span style={{ color: 'rgba(255,255,255,.4)', fontSize: 11, flexShrink: 0 }}>
-                    {timeAgo(entry.created_at)}
-                  </span>
+                  {/* 내 글 뱃지 또는 시간 — 같은 자리에 하나만 표시 */}
+                  {isMe ? (
+                    <div style={{
+                      flexShrink: 0,
+                      background: 'rgba(236,72,153,.18)', border: '1px solid rgba(236,72,153,.3)',
+                      borderRadius: 100, padding: '2px 10px',
+                      color: '#f9a8d4', fontSize: 10, fontWeight: 700,
+                    }}>내 글</div>
+                  ) : (
+                    <span style={{ color: 'rgba(255,255,255,.4)', fontSize: 11, flexShrink: 0 }}>
+                      {timeAgo(entry.created_at)}
+                    </span>
+                  )}
                 </div>
 
                 {entry.message && (

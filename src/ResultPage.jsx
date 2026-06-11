@@ -80,8 +80,9 @@ export default function ResultPage({ winner, onRetry, onLeaderboard }) {
     setSaving(true)
     setSubmitError('')
     try {
+      let myEntryId = null
       if (supabase) {
-        const { error } = await supabase.from('scores').insert({
+        const { data, error } = await supabase.from('scores').insert({
           player:       name,
           celeb_name:   winner.name,
           celeb_emoji:  winner.emoji || '',
@@ -89,10 +90,11 @@ export default function ResultPage({ winner, onRetry, onLeaderboard }) {
           points:       Math.round(score * 100),
           bracket_size: bracketSize,
           message:      message.trim() || null,
-        })
+        }).select('id').single()
         if (error) throw error
+        myEntryId = data?.id ?? null
       }
-      onLeaderboard(name)
+      onLeaderboard(name, myEntryId)
     } catch (e) {
       console.error('방명록 저장 실패:', e)
       setSubmitError('저장에 실패했어요. 다시 시도해주세요.')
@@ -106,6 +108,7 @@ export default function ResultPage({ winner, onRetry, onLeaderboard }) {
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       position: 'relative', overflow: 'hidden',
       fontFamily: "'Noto Sans KR', sans-serif",
+      '--score-pct': `${score}%`,
     }}>
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
@@ -264,7 +267,7 @@ export default function ResultPage({ winner, onRetry, onLeaderboard }) {
       <style>{`
         @keyframes trophyBounce { 0%,100%{transform:translateY(0) rotate(-6deg)} 50%{transform:translateY(-12px) rotate(6deg)} }
         @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes barGrow { from{width:0} to{width:${score}%} }
+        @keyframes barGrow { from{width:0} to{width:var(--score-pct)} }
         @keyframes confettiFall { to{transform:translateY(110vh) rotate(720deg);opacity:0} }
         input::placeholder, textarea::placeholder { color: rgba(255,255,255,.2); }
         input:focus, textarea:focus { border-color: rgba(251,191,36,.6) !important; background: rgba(251,191,36,.1) !important; }

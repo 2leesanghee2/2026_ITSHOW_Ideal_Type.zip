@@ -11,6 +11,7 @@ export default function App() {
   const [page, setPage] = useState('welcome')
   const [winner, setWinner] = useState(null)
   const [nickname, setNickname] = useState('')
+  const [myEntryId, setMyEntryId] = useState(null)
   const [gameKey, setGameKey] = useState(0)
   const [pool, setPool] = useState([])
   const [celebrities, setCelebrities] = useState(CELEBRITIES)
@@ -22,6 +23,8 @@ export default function App() {
         if (!error && data?.length > 0) setCelebrities(data)
       })
   }, [])
+
+  const dispatchActivity = useCallback(() => window.dispatchEvent(new Event('gesture-activity')), [])
 
   const goHome = useCallback(() => {
     setWinner(null)
@@ -61,9 +64,9 @@ export default function App() {
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: '#1a0d38' }}>
       {page === 'welcome'     && <WelcomePage onStart={goCondition} />}
       {page === 'condition'   && <ConditionPage onStart={startGame} onBack={goHome} celebrities={celebrities} />}
-      {page === 'worldcup'    && <WorldCupPage key={gameKey} pool={pool} onFinish={w => { setWinner(w); setPage('result') }} onActivity={() => window.dispatchEvent(new Event('gesture-activity'))} />}
-      {page === 'result'      && <ResultPage winner={winner} onRetry={goCondition} onLeaderboard={nick => { setNickname(nick); setPage('leaderboard') }} />}
-      {page === 'leaderboard' && <LeaderboardPage winner={winner} nickname={nickname} onHome={goHome} />}
+      {page === 'worldcup'    && <WorldCupPage key={gameKey} pool={pool} onFinish={w => { setWinner(w); setPage('result') }} onActivity={dispatchActivity} />}
+      {page === 'result'      && <ResultPage winner={winner} onRetry={goCondition} onLeaderboard={(nick, entryId) => { setNickname(nick); setMyEntryId(entryId); setPage('leaderboard') }} />}
+      {page === 'leaderboard' && <LeaderboardPage winner={winner} nickname={nickname} myEntryId={myEntryId} onHome={goHome} />}
     </div>
   )
 }

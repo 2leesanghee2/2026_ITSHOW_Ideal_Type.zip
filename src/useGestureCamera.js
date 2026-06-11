@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 
 // ── 튜닝 상수 ─────────────────────────────────────────────────────────────────
-const MOVE_THR     = 0.020  // IDLE→TRACKING 진입 임계 — 높여서 오발동 방지
-const MIN_DISP     = 0.13   // 발동 누적 거리 — 낮춰서 빠른 발동
-const MIN_FRAMES   = 3      // 같은 방향 최소 프레임 수 — 줄여서 반응성 향상
-const MIN_CONSIST  = 0.60   // 방향 일관성 비율
-const MAX_REVERSE  = 0.12   // 허용 역방향 거리 — 약간 관대하게
-const STALE_MS     = 550    // 정지 후 취소 시간
-const COOLDOWN_MS  = 850    // 발동 후 대기 시간 — 짧게, 연속 선택 쾌적
-const SMOOTH_ALPHA = 0.42   // 누적용 EMA 계수 — 높여서 반응성 향상
+const MOVE_THR     = 0.032  // IDLE→TRACKING 진입 임계
+const MIN_DISP     = 0.20   // 발동 누적 거리
+const MIN_FRAMES   = 5      // 같은 방향 최소 프레임 수
+const MIN_CONSIST  = 0.65   // 방향 일관성 비율
+const MAX_REVERSE  = 0.10   // 허용 역방향 거리
+const STALE_MS     = 500    // 정지 후 취소 시간
+const COOLDOWN_MS  = 1000   // 발동 후 대기 시간
+const SMOOTH_ALPHA = 0.35   // 누적용 EMA 계수
+const REST_THR     = 0.012  // 발동 후 손이 이 속도 이하여야 "정지"로 판단
+const REST_FRAMES  = 5      // 정지 판단에 필요한 연속 프레임 수
 
 export function useGestureCamera({ onGesture, active }) {
   const videoRef   = useRef(null)
@@ -21,6 +23,8 @@ export function useGestureCamera({ onGesture, active }) {
   const prevXRef       = useRef(null)
   const smoothDxRef    = useRef(0)
   const lockedRef      = useRef(false)   // 쿨다운 중 입력 차단
+  const needRestRef    = useRef(false)   // 발동 후 손 정지 요구
+  const restFramesRef  = useRef(0)       // 연속 정지 프레임 수
 
   // 추적 중 누적값
   const dirRef         = useRef(null)    // 'left' | 'right'
@@ -33,8 +37,8 @@ export function useGestureCamera({ onGesture, active }) {
   const [camState, setCamState]         = useState('idle')
   const [gestureState, setGestureState] = useState({ dir: null, pct: 0 })
 
-  // ── 추적 상태 초기화 ────────────────────────────────────────────────────────
-  const resetTracking = useCallback(() => {
+  // ── 추적 상태 초기화 (needRest=true면 발동 후 리셋) ────────────────────────
+  const resetTracking = useCallback((needRest = false) => {
     dirRef.current         = null
     totalDispRef.current   = 0
     revDispRef.current     = 0
@@ -44,16 +48,35 @@ export function useGestureCamera({ onGesture, active }) {
     smoothDxRef.current    = 0
     prevXRef.current       = null
     lockedRef.current      = false
+    needRestRef.current    = needRest
+    restFramesRef.current  = 0
     setGestureState({ dir: null, pct: 0 })
   }, [])
 
+  const resetAfterFire = useCallback(() => resetTracking(true), [resetTracking])
+
   // ── 핵심: 매 프레임 손 위치 처리 ───────────────────────────────────────────
   const processHand = useCallback((landmarks) => {
+    // 손목 좌표 — 최상단 선언으로 TDZ 방지
+    const handX = landmarks[0].x
+
     // 쿨다운 중에는 처리 안 함
     if (lockedRef.current) return
 
-    // 손목만 사용 — indexTip보다 훨씬 안정적
-    const handX = landmarks[0].x
+    // 발동 후 손이 충분히 멈춰야 새 입력 허용
+    if (needRestRef.current) {
+      if (prevXRef.current !== null) {
+        const dx = Math.abs(handX - prevXRef.current)
+        if (dx < REST_THR) {
+          restFramesRef.current++
+          if (restFramesRef.current >= REST_FRAMES) needRestRef.current = false
+        } else {
+          restFramesRef.current = 0
+        }
+      }
+      prevXRef.current = handX
+      return
+    }
 
     if (prevXRef.current === null) {
       prevXRef.current = handX
@@ -128,27 +151,43 @@ export function useGestureCamera({ onGesture, active }) {
       lockedRef.current = true
       setGestureState({ dir: dirRef.current, pct: 100 })
       onGesture(dirRef.current)
-      setTimeout(resetTracking, COOLDOWN_MS)
+      setTimeout(resetAfterFire, COOLDOWN_MS)
     }
-  }, [onGesture, resetTracking])
+  }, [onGesture, resetTracking, resetAfterFire])
 
   // ── 카메라 시작 ─────────────────────────────────────────────────────────────
   const startCamera = useCallback(async () => {
+    streamRef.current?.getTracks().forEach(t => t.stop())
+    streamRef.current = null
     setCamState('loading')
+
+    // 1단계: 카메라 스트림 획득 (권한 거부면 즉시 noperm)
+    let stream
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
+      stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'user', width: 320, height: 240 }
       })
-      streamRef.current = stream
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        await videoRef.current.play()
-      }
-      // ※ 'ready'는 MediaPipe 로드 완료 후 첫 프레임 처리 시점으로 이동
+    } catch (e) {
+      console.error('카메라 획득 실패:', e)
+      setCamState(e.name === 'NotAllowedError' ? 'noperm' : 'error')
+      return
+    }
 
-      const { Hands }                                       = await import('@mediapipe/hands')
-      const { Camera }                                      = await import('@mediapipe/camera_utils')
-      const { drawConnectors, drawLandmarks, HAND_CONNECTIONS } = await import('@mediapipe/drawing_utils')
+    streamRef.current = stream
+    if (videoRef.current) {
+      videoRef.current.srcObject = stream
+      try { await videoRef.current.play() } catch (_) {}
+    }
+
+    // 2단계: MediaPipe 로드 (CDN 전역변수 사용 — Vite 번들링 우회)
+    try {
+      const Hands         = window.Hands
+      const Camera        = window.Camera
+      const drawConnectors = window.drawConnectors
+      const drawLandmarks  = window.drawLandmarks
+      const HAND_CONNECTIONS = window.HAND_CONNECTIONS
+
+      if (!Hands || !Camera) throw new Error('MediaPipe not loaded')
 
       const hands = new Hands({
         locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/${f}`
@@ -161,7 +200,6 @@ export function useGestureCamera({ onGesture, active }) {
       })
       let firstFrame = true
       hands.onResults((results) => {
-        // 첫 프레임이 처리될 때 비로소 '손 인식 중' 상태로 전환
         if (firstFrame) { setCamState('ready'); firstFrame = false }
         const canvas = canvasRef.current
         if (!canvas) return
@@ -190,8 +228,9 @@ export function useGestureCamera({ onGesture, active }) {
       cameraRef.current = cam
 
     } catch (e) {
-      console.error(e)
-      setCamState(e.name === 'NotAllowedError' ? 'noperm' : 'error')
+      // MediaPipe 로드 실패: 카메라 영상은 살리고, 제스처만 비활성화
+      console.error('MediaPipe 로드 실패:', e)
+      setCamState('ready')  // 카드 탭으로 게임 진행 가능하게
     }
   }, [processHand])
 
@@ -202,6 +241,7 @@ export function useGestureCamera({ onGesture, active }) {
     handsRef.current?.close()
     handsRef.current  = null
     cameraRef.current = null
+    streamRef.current = null
     setCamState('idle')
     resetTracking()
   }, [resetTracking])

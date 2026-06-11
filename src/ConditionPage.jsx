@@ -22,10 +22,10 @@ function filterCelebs(cond, celebrities) {
     if (c.weight < cond.weightMin || c.weight > cond.weightMax) return false
     if (c.age < cond.ageMin || c.age > cond.ageMax) return false
     if (cond.nationality !== '전체' && c.nationality !== cond.nationality) return false
-    if (cond.mbtiEI !== '전체' && c.mbti && !c.mbti.includes(cond.mbtiEI)) return false
-    if (cond.mbtiNS !== '전체' && c.mbti && !c.mbti.includes(cond.mbtiNS)) return false
-    if (cond.mbtiTF !== '전체' && c.mbti && !c.mbti.includes(cond.mbtiTF)) return false
-    if (cond.mbtiJP !== '전체' && c.mbti && !c.mbti.includes(cond.mbtiJP)) return false
+    if (cond.mbtiEI !== '전체' && (!c.mbti || !c.mbti.includes(cond.mbtiEI))) return false
+    if (cond.mbtiNS !== '전체' && (!c.mbti || !c.mbti.includes(cond.mbtiNS))) return false
+    if (cond.mbtiTF !== '전체' && (!c.mbti || !c.mbti.includes(cond.mbtiTF))) return false
+    if (cond.mbtiJP !== '전체' && (!c.mbti || !c.mbti.includes(cond.mbtiJP))) return false
     return true
   })
 }
@@ -225,9 +225,8 @@ export default function ConditionPage({ onStart, onBack, celebrities }) {
   const enough = matched.length >= 2
 
   const bracketSize = (() => {
-    const n = Math.min(matched.length, 32)
-    const sizes = [2, 4, 8, 16, 32]
-    return sizes.find(s => s >= n) || 2
+    const sizes = [32, 16, 8, 4, 2]
+    return sizes.find(s => s <= matched.length) || 2
   })()
 
   const handleStart = () => {

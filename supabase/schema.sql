@@ -23,10 +23,14 @@ create table if not exists scores (
   player       text,
   celeb_name   text,
   celeb_emoji  text,
+  celeb_group  text,
   points       int,
   bracket_size int,
   message      text
 );
+
+-- 기존 테이블에 celeb_group이 없을 경우 마이그레이션:
+-- alter table scores add column if not exists celeb_group text;
 
 -- 3. RLS 정책 (공개 읽기, scores는 공개 쓰기도)
 alter table celebrities enable row level security;

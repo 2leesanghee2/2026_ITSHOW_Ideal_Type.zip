@@ -13,6 +13,7 @@ function playTone(freq = 440, dur = 120, vol = 0.2) {
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur / 1000)
     osc.start()
     osc.stop(ctx.currentTime + dur / 1000)
+    osc.onended = () => ctx.close()
   } catch (e) {}
 }
 
@@ -26,20 +27,18 @@ function shuffle(arr) {
 }
 
 function getStageLabel(size) {
+  if (size >= 32) return '32강'
   if (size >= 16) return '16강'
   if (size >= 8)  return '8강'
   if (size >= 4)  return '4강'
-  return '결승'   // size === 2
+  return '결승'
 }
 
 function makeBracket(pool) {
-  // pool은 ConditionPage에서 이미 정확한 수로 전달됨 (랜덤 셔플 완료)
-  // 단, 2의 제곱수가 아닐 경우 올림 처리
-  const sizes = [2, 4, 8, 16, 32]
-  const size = sizes.find(s => s >= pool.length) || 2
-  const shuffled = shuffle(pool)
-  while (shuffled.length < size) shuffled.push(...shuffle(pool))
-  return shuffled.slice(0, size)
+  // ConditionPage가 이미 내림으로 잘라서 보내주므로, 여기서도 내림으로 맞춤
+  const sizes = [32, 16, 8, 4, 2]
+  const size = sizes.find(s => s <= pool.length) || 2
+  return shuffle(pool).slice(0, size)
 }
 
 function initTournament(pool) {
@@ -122,7 +121,7 @@ export default function WorldCupPage({ pool, onFinish, onActivity }) {
         return { ...prev, matchIndex: prev.matchIndex + 1, winners: newWinners, totalMatches: newTotal }
       })
     }, 650)
-  }, [])
+  }, [onActivity])
 
   // onFinish를 ref로 참조 — onFinish 레퍼런스 변경 시 재트리거 방지
   // 우승자 확정 후 1.5초 유지하며 플래시 화면 보여준 뒤 결과 페이지로 이동
