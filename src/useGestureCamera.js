@@ -8,6 +8,8 @@ const MAX_REVERSE  = 0.12
 const STALE_MS     = 500
 const COOLDOWN_MS  = 1200
 const SMOOTH_ALPHA = 0.35
+const REST_THR     = 0.05   // 쿨다운 후 "정지" 판정 임계 (프레임폭 5% 이하)
+const REST_FRAMES  = 3      // 연속 3프레임 정지 확인 후 새 입력 허용
 
 export function useGestureCamera({ onGesture, active }) {
   const videoRef  = useRef(null)
@@ -29,8 +31,12 @@ export function useGestureCamera({ onGesture, active }) {
   const goodFramesRef  = useRef(0)
   const totalFramesRef = useRef(0)
   const lastMoveRef    = useRef(0)
-  // setTimeout 대신 시간 기반 쿨다운 — 타이머 미발동 이슈 원천 차단
+  // 시간 기반 쿨다운
   const cooldownUntil  = useRef(0)
+  // 쿨다운 후 손 정지 요구 — 복귀 스윙 오발동 방지
+  const needRestRef    = useRef(false)
+  const restFramesRef  = useRef(0)
+  const restPrevXRef   = useRef(null)
 
   const [camState, setCamState]         = useState('idle')
   const [gestureState, setGestureState] = useState({ dir: null, pct: 0 })
@@ -51,10 +57,31 @@ export function useGestureCamera({ onGesture, active }) {
   const processHand = useCallback((landmarks) => {
     const now = Date.now()
 
-    // 시간 기반 쿨다운 — setTimeout 없이 직접 체크
+    // 쿨다운 중 차단
     if (now < cooldownUntil.current) return
 
     const handX = landmarks[0].x
+
+    // 쿨다운 끝난 후 손이 충분히 멈출 때까지 새 입력 차단
+    // REST_THR=0.05 (프레임폭 5%)로 넉넉하게 설정 — 이전 0.012가 너무 빡빡해서 영구 차단됐던 버그 수정됨
+    if (needRestRef.current) {
+      if (restPrevXRef.current !== null) {
+        const dx = Math.abs(handX - restPrevXRef.current)
+        if (dx < REST_THR) {
+          restFramesRef.current++
+          if (restFramesRef.current >= REST_FRAMES) {
+            needRestRef.current  = false
+            restFramesRef.current = 0
+            restPrevXRef.current  = null
+          }
+        } else {
+          restFramesRef.current = 0
+        }
+      }
+      restPrevXRef.current = handX
+      prevXRef.current = handX  // 정지 대기 중에도 prevX 갱신해 추적 재개 시 튐 방지
+      return
+    }
 
     if (prevXRef.current === null) {
       prevXRef.current = handX
@@ -123,6 +150,9 @@ export function useGestureCamera({ onGesture, active }) {
     ) {
       const firedDir = dirRef.current
       cooldownUntil.current = now + COOLDOWN_MS
+      needRestRef.current   = true
+      restFramesRef.current = 0
+      restPrevXRef.current  = null
       resetTracking()
       setGestureState({ dir: firedDir, pct: 100 })
       // onGesture를 다음 이벤트 루프로 미룸:
@@ -216,6 +246,9 @@ export function useGestureCamera({ onGesture, active }) {
     cameraRef.current = null
     streamRef.current = null
     cooldownUntil.current = 0
+    needRestRef.current   = false
+    restFramesRef.current = 0
+    restPrevXRef.current  = null
     resetTracking()
     setCamState('idle')
     setGestureState({ dir: null, pct: 0 })
