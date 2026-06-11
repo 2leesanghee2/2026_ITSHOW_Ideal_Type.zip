@@ -122,13 +122,17 @@ export function useGestureCamera({ onGesture, active }) {
       consistency >= MIN_CONSIST
     ) {
       const firedDir = dirRef.current
-      // 쿨다운 설정 — 이 순간부터 COOLDOWN_MS 동안 입력 차단
       cooldownUntil.current = now + COOLDOWN_MS
       resetTracking()
       setGestureState({ dir: firedDir, pct: 100 })
-      onGestureRef.current(firedDir)
-      // UI 상태만 지연 초기화 (쿨다운 끝날 때)
-      setTimeout(() => setGestureState({ dir: null, pct: 0 }), COOLDOWN_MS)
+      // onGesture를 다음 이벤트 루프로 미룸:
+      // hands.onResults 콜백 내부에서 React setState를 다량 동기 실행하면
+      // MediaPipe WASM 파이프라인이 블로킹되어 onResults가 이후 프레임에서
+      // 호출되지 않는 버그 발생 → setTimeout(0)으로 콜백 반환 후 실행
+      setTimeout(() => {
+        onGestureRef.current(firedDir)
+        setTimeout(() => setGestureState({ dir: null, pct: 0 }), COOLDOWN_MS)
+      }, 0)
     }
   }, [])  // 의존성 없음 — 절대 재생성 안 됨
 
