@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+pocketbase/pocketbase.exe
+public/images/celebs/
+scripts/__pycache__/
+__pycache__/
+*.pyc
