@@ -17,23 +17,27 @@ export function useGestureCamera({ onGesture, active }) {
   const handsRef   = useRef(null)
   const cameraRef  = useRef(null)
 
-  // ── 제스처 추적 refs (렌더링 불필요한 내부 상태) ──────────────────────────
+  // onGesture를 ref로 관리 — processHand/startCamera 의존성 체인 차단
+  // onGesture가 바뀌어도 카메라가 재시작되지 않음
+  const onGestureRef = useRef(onGesture)
+  useEffect(() => { onGestureRef.current = onGesture }, [onGesture])
+
+  // ── 제스처 추적 refs ───────────────────────────────────────────────────────
   const prevXRef       = useRef(null)
   const smoothDxRef    = useRef(0)
-  const lockedRef      = useRef(false)   // 쿨다운 중 입력 차단
+  const lockedRef      = useRef(false)
 
-  // 추적 중 누적값
-  const dirRef         = useRef(null)    // 'left' | 'right'
-  const totalDispRef   = useRef(0)       // 올바른 방향 누적 거리
-  const revDispRef     = useRef(0)       // 역방향 누적 거리
-  const goodFramesRef  = useRef(0)       // 올바른 방향 프레임 수
-  const totalFramesRef = useRef(0)       // 전체 추적 프레임 수
-  const lastMoveRef    = useRef(0)       // 마지막 움직임 감지 시각
+  const dirRef         = useRef(null)
+  const totalDispRef   = useRef(0)
+  const revDispRef     = useRef(0)
+  const goodFramesRef  = useRef(0)
+  const totalFramesRef = useRef(0)
+  const lastMoveRef    = useRef(0)
 
   const [camState, setCamState]         = useState('idle')
   const [gestureState, setGestureState] = useState({ dir: null, pct: 0 })
 
-  // ── 추적 상태 초기화 ────────────────────────────────────────────────────────
+  // ── 추적 상태 초기화 — [] 의존성으로 항상 동일한 참조 ─────────────────────
   const resetTracking = useCallback(() => {
     dirRef.current         = null
     totalDispRef.current   = 0
@@ -47,9 +51,9 @@ export function useGestureCamera({ onGesture, active }) {
     setGestureState({ dir: null, pct: 0 })
   }, [])
 
-  // ── 핵심: 매 프레임 손 위치 처리 ───────────────────────────────────────────
+  // ── 핵심: 매 프레임 손 위치 처리 — [] 의존성으로 항상 동일한 참조 ─────────
+  // onGesture는 onGestureRef.current으로 접근해 deps에서 제거
   const processHand = useCallback((landmarks) => {
-    // 쿨다운 중에는 처리 안 함 (COOLDOWN_MS 동안 복귀 스윙도 차단)
     if (lockedRef.current) return
 
     const handX = landmarks[0].x
@@ -62,11 +66,9 @@ export function useGestureCamera({ onGesture, active }) {
     const rawDx = handX - prevXRef.current
     prevXRef.current = handX
 
-    // EMA는 누적 단계에서만 사용 — IDLE 진입은 raw dx로 판단
     smoothDxRef.current = smoothDxRef.current * (1 - SMOOTH_ALPHA) + rawDx * SMOOTH_ALPHA
     const now = Date.now()
 
-    // ── IDLE: raw dx로 방향 탐지 (EMA 지연 없음) ───────────────────────────
     if (dirRef.current === null) {
       if (Math.abs(rawDx) > MOVE_THR) {
         dirRef.current         = rawDx < 0 ? 'left' : 'right'
@@ -75,13 +77,12 @@ export function useGestureCamera({ onGesture, active }) {
         goodFramesRef.current  = 1
         totalFramesRef.current = 1
         lastMoveRef.current    = now
-        smoothDxRef.current    = rawDx  // 첫 프레임 EMA를 raw로 초기화
+        smoothDxRef.current    = rawDx
         setGestureState({ dir: dirRef.current, pct: 0 })
       }
       return
     }
 
-    // ── TRACKING: smoothed dx로 누적 ────────────────────────────────────────
     const dx     = smoothDxRef.current
     const speed  = Math.abs(dx)
     const inDir  = (dirRef.current === 'left'  && dx < -MOVE_THR * 0.4) ||
@@ -96,29 +97,24 @@ export function useGestureCamera({ onGesture, active }) {
       goodFramesRef.current += 1
       lastMoveRef.current    = now
     } else if (revDir) {
-      // 역방향 이동 누적
       revDispRef.current += speed
       if (revDispRef.current > MAX_REVERSE) {
-        // 반대로 너무 많이 움직임 → 의도적 스와이프 아님, 취소
         resetTracking()
         return
       }
     }
 
-    // 정지 타임아웃: 너무 오래 움직임 없으면 취소
     if (now - lastMoveRef.current > STALE_MS) {
       resetTracking()
       return
     }
 
-    // 진행도 계산 (UI 표시용)
     const consistency = totalFramesRef.current > 0
       ? goodFramesRef.current / totalFramesRef.current
       : 0
     const pct = Math.min(Math.round((totalDispRef.current / MIN_DISP) * 100), 99)
     setGestureState({ dir: dirRef.current, pct })
 
-    // ── 발동 조건: 거리 + 프레임 수 + 일관성 모두 충족 ──────────────────────
     if (
       totalDispRef.current >= MIN_DISP &&
       goodFramesRef.current >= MIN_FRAMES &&
@@ -126,18 +122,21 @@ export function useGestureCamera({ onGesture, active }) {
     ) {
       lockedRef.current = true
       setGestureState({ dir: dirRef.current, pct: 100 })
-      onGesture(dirRef.current)
+      onGestureRef.current(dirRef.current)   // ref로 호출 — deps 불필요
       setTimeout(resetTracking, COOLDOWN_MS)
     }
-  }, [onGesture, resetTracking])
+  }, [resetTracking])  // onGesture 제거 → processHand 참조 안정
 
-  // ── 카메라 시작 ─────────────────────────────────────────────────────────────
+  // ── 카메라 시작 — [] 의존성으로 절대 재생성되지 않음 ───────────────────────
+  // processHand를 직접 닫지 않고 processHandRef.current으로 호출
+  const processHandRef = useRef(processHand)
+  useEffect(() => { processHandRef.current = processHand }, [processHand])
+
   const startCamera = useCallback(async () => {
     streamRef.current?.getTracks().forEach(t => t.stop())
     streamRef.current = null
     setCamState('loading')
 
-    // 1단계: 카메라 스트림 획득 (권한 거부면 즉시 noperm)
     let stream
     try {
       stream = await navigator.mediaDevices.getUserMedia({
@@ -155,10 +154,9 @@ export function useGestureCamera({ onGesture, active }) {
       try { await videoRef.current.play() } catch (_) {}
     }
 
-    // 2단계: MediaPipe 로드 (CDN 전역변수 사용 — Vite 번들링 우회)
     try {
-      const Hands         = window.Hands
-      const Camera        = window.Camera
+      const Hands          = window.Hands
+      const Camera         = window.Camera
       const drawConnectors = window.drawConnectors
       const drawLandmarks  = window.drawLandmarks
       const HAND_CONNECTIONS = window.HAND_CONNECTIONS
@@ -190,7 +188,7 @@ export function useGestureCamera({ onGesture, active }) {
         drawConnectors(ctx, lm, HAND_CONNECTIONS, { color: 'rgba(74,222,128,.8)', lineWidth: 2 })
         drawLandmarks(ctx, lm, { color: 'rgba(250,204,21,.9)', lineWidth: 1, radius: 3 })
         ctx.restore()
-        processHand(lm)
+        processHandRef.current(lm)   // 항상 최신 processHand 참조
       })
 
       handsRef.current = hands
@@ -204,11 +202,10 @@ export function useGestureCamera({ onGesture, active }) {
       cameraRef.current = cam
 
     } catch (e) {
-      // MediaPipe 로드 실패: 카메라 영상은 살리고, 제스처만 비활성화
       console.error('MediaPipe 로드 실패:', e)
-      setCamState('ready')  // 카드 탭으로 게임 진행 가능하게
+      setCamState('ready')
     }
-  }, [processHand])
+  }, [])  // 의존성 없음 — 카메라는 mount 시 한 번만 시작
 
   // ── 카메라 종료 ─────────────────────────────────────────────────────────────
   const stopCamera = useCallback(() => {
