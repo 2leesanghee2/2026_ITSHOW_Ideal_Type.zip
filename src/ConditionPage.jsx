@@ -152,15 +152,15 @@ function MbtiFilter({ cond, onChange }) {
           const { color, bg } = AXIS_COLORS[key]
           return (
             <div key={key} style={{
-              background: val !== '전체' ? `${bg}.06)` : 'rgba(255,255,255,.04)',
-              border: `1px solid ${val !== '전체' ? `${bg}.25)` : 'rgba(255,255,255,.1)'}`,
-              borderRadius: 12, padding: '10px 12px',
+              background: val !== '전체' ? `${bg}.10)` : 'rgba(255,255,255,.05)',
+              border: `1px solid ${val !== '전체' ? `${bg}.40)` : 'rgba(255,255,255,.18)'}`,
+              borderRadius: 12, padding: '12px 12px',
               transition: 'all .2s',
             }}>
               {/* 축 레이블 */}
               <div style={{
-                fontSize: 9, letterSpacing: 2, fontWeight: 700, textTransform: 'uppercase',
-                color: val !== '전체' ? color : 'rgba(255,255,255,.35)',
+                fontSize: 11, letterSpacing: 1.5, fontWeight: 700, textTransform: 'uppercase',
+                color: val !== '전체' ? color : 'rgba(255,255,255,.6)',
                 marginBottom: 8, transition: 'color .2s',
               }}>{label}</div>
 
@@ -177,32 +177,32 @@ function MbtiFilter({ cond, onChange }) {
                       onClick={() => onChange(condKey, isActive && !isCenter ? '전체' : opt)}
                       style={{
                         flex: isCenter ? 0.8 : 1,
-                        padding: '6px 0',
+                        padding: '8px 0',
                         borderRadius: 8,
                         cursor: 'pointer',
                         border: isActive
-                          ? `1px solid ${bg}.5)`
-                          : '1px solid rgba(255,255,255,.1)',
+                          ? `1px solid ${bg}.6)`
+                          : '1px solid rgba(255,255,255,.2)',
                         background: isActive
-                          ? (isCenter ? 'rgba(255,255,255,.07)' : `${bg}.22)`)
-                          : 'transparent',
+                          ? (isCenter ? 'rgba(255,255,255,.12)' : `${bg}.30)`)
+                          : 'rgba(255,255,255,.04)',
                         color: isActive
-                          ? (isCenter ? 'rgba(255,255,255,.5)' : color)
-                          : 'rgba(255,255,255,.3)',
+                          ? (isCenter ? 'rgba(255,255,255,.8)' : color)
+                          : 'rgba(255,255,255,.65)',
                         fontFamily: "'Black Han Sans', sans-serif",
-                        fontSize: isCenter ? 9 : 13,
+                        fontSize: isCenter ? 10 : 15,
                         fontWeight: 700,
                         letterSpacing: isCenter ? 0.5 : 1,
                         transition: 'all .15s',
-                        boxShadow: isActive && !isCenter ? `0 0 10px ${bg}.3)` : 'none',
+                        boxShadow: isActive && !isCenter ? `0 0 12px ${bg}.4)` : 'none',
                         display: 'flex', flexDirection: 'column',
-                        alignItems: 'center', justifyContent: 'center', gap: 1,
+                        alignItems: 'center', justifyContent: 'center', gap: 2,
                         lineHeight: 1,
                       }}
                     >
                       <span>{opt}</span>
                       {(isLeft || isRight) && (
-                        <span style={{ fontSize: 8, opacity: 0.7, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 400 }}>
+                        <span style={{ fontSize: 10, opacity: 0.9, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 700 }}>
                           {isLeft ? leftKo : rightKo}
                         </span>
                       )}

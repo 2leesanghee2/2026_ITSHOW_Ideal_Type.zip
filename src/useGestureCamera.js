@@ -7,10 +7,8 @@ const MIN_FRAMES   = 5      // 같은 방향 최소 프레임 수
 const MIN_CONSIST  = 0.65   // 방향 일관성 비율
 const MAX_REVERSE  = 0.10   // 허용 역방향 거리
 const STALE_MS     = 500    // 정지 후 취소 시간
-const COOLDOWN_MS  = 1000   // 발동 후 대기 시간
+const COOLDOWN_MS  = 1200   // 발동 후 대기 시간 (복귀 스윙 방지)
 const SMOOTH_ALPHA = 0.35   // 누적용 EMA 계수
-const REST_THR     = 0.012  // 발동 후 손이 이 속도 이하여야 "정지"로 판단
-const REST_FRAMES  = 5      // 정지 판단에 필요한 연속 프레임 수
 
 export function useGestureCamera({ onGesture, active }) {
   const videoRef   = useRef(null)
@@ -23,8 +21,6 @@ export function useGestureCamera({ onGesture, active }) {
   const prevXRef       = useRef(null)
   const smoothDxRef    = useRef(0)
   const lockedRef      = useRef(false)   // 쿨다운 중 입력 차단
-  const needRestRef    = useRef(false)   // 발동 후 손 정지 요구
-  const restFramesRef  = useRef(0)       // 연속 정지 프레임 수
 
   // 추적 중 누적값
   const dirRef         = useRef(null)    // 'left' | 'right'
@@ -37,8 +33,8 @@ export function useGestureCamera({ onGesture, active }) {
   const [camState, setCamState]         = useState('idle')
   const [gestureState, setGestureState] = useState({ dir: null, pct: 0 })
 
-  // ── 추적 상태 초기화 (needRest=true면 발동 후 리셋) ────────────────────────
-  const resetTracking = useCallback((needRest = false) => {
+  // ── 추적 상태 초기화 ────────────────────────────────────────────────────────
+  const resetTracking = useCallback(() => {
     dirRef.current         = null
     totalDispRef.current   = 0
     revDispRef.current     = 0
@@ -48,35 +44,15 @@ export function useGestureCamera({ onGesture, active }) {
     smoothDxRef.current    = 0
     prevXRef.current       = null
     lockedRef.current      = false
-    needRestRef.current    = needRest
-    restFramesRef.current  = 0
     setGestureState({ dir: null, pct: 0 })
   }, [])
 
-  const resetAfterFire = useCallback(() => resetTracking(true), [resetTracking])
-
   // ── 핵심: 매 프레임 손 위치 처리 ───────────────────────────────────────────
   const processHand = useCallback((landmarks) => {
-    // 손목 좌표 — 최상단 선언으로 TDZ 방지
-    const handX = landmarks[0].x
-
-    // 쿨다운 중에는 처리 안 함
+    // 쿨다운 중에는 처리 안 함 (COOLDOWN_MS 동안 복귀 스윙도 차단)
     if (lockedRef.current) return
 
-    // 발동 후 손이 충분히 멈춰야 새 입력 허용
-    if (needRestRef.current) {
-      if (prevXRef.current !== null) {
-        const dx = Math.abs(handX - prevXRef.current)
-        if (dx < REST_THR) {
-          restFramesRef.current++
-          if (restFramesRef.current >= REST_FRAMES) needRestRef.current = false
-        } else {
-          restFramesRef.current = 0
-        }
-      }
-      prevXRef.current = handX
-      return
-    }
+    const handX = landmarks[0].x
 
     if (prevXRef.current === null) {
       prevXRef.current = handX
@@ -151,9 +127,9 @@ export function useGestureCamera({ onGesture, active }) {
       lockedRef.current = true
       setGestureState({ dir: dirRef.current, pct: 100 })
       onGesture(dirRef.current)
-      setTimeout(resetAfterFire, COOLDOWN_MS)
+      setTimeout(resetTracking, COOLDOWN_MS)
     }
-  }, [onGesture, resetTracking, resetAfterFire])
+  }, [onGesture, resetTracking])
 
   // ── 카메라 시작 ─────────────────────────────────────────────────────────────
   const startCamera = useCallback(async () => {
