@@ -57,20 +57,17 @@ export function useGestureCamera({ onGesture, active }) {
   const processHand = useCallback((landmarks) => {
     const now = Date.now()
 
-    // 쿨다운 중 차단
-    if (now < cooldownUntil.current) return
-
     const handX = landmarks[0].x
 
-    // 쿨다운 끝난 후 손이 충분히 멈출 때까지 새 입력 차단
-    // REST_THR=0.05 (프레임폭 5%)로 넉넉하게 설정 — 이전 0.012가 너무 빡빡해서 영구 차단됐던 버그 수정됨
+    // 쿨다운 중에도 needRest 체크 — 복귀 중 손이 멈추면 쿨다운 안에서 미리 해제
+    // (쿨다운 후에만 체크하면 새 스윙 모션 자체가 needRest를 방해해 영구 차단됨)
     if (needRestRef.current) {
       if (restPrevXRef.current !== null) {
         const dx = Math.abs(handX - restPrevXRef.current)
         if (dx < REST_THR) {
           restFramesRef.current++
           if (restFramesRef.current >= REST_FRAMES) {
-            needRestRef.current  = false
+            needRestRef.current   = false
             restFramesRef.current = 0
             restPrevXRef.current  = null
           }
@@ -79,9 +76,13 @@ export function useGestureCamera({ onGesture, active }) {
         }
       }
       restPrevXRef.current = handX
-      prevXRef.current = handX  // 정지 대기 중에도 prevX 갱신해 추적 재개 시 튐 방지
-      return
+      prevXRef.current = handX
+      if (now < cooldownUntil.current) return  // 쿨다운 중이면 추적은 안 함
+      return  // needRest 아직 미해제면 추적 안 함
     }
+
+    // 쿨다운 중 (needRest 이미 해제된 경우) — 추적만 막음
+    if (now < cooldownUntil.current) return
 
     if (prevXRef.current === null) {
       prevXRef.current = handX
