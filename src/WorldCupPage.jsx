@@ -357,16 +357,6 @@ function PanelSide({ celeb, side, glow, highlighted, onClick, fullscreen }) {
       }} />
 
       {/* 화살표 */}
-      {!fullscreen && (
-        <div style={{
-          position: 'absolute', top: '50%', transform: 'translateY(-50%)',
-          [isLeft ? 'left' : 'right']: 'clamp(12px,2.5vw,28px)',
-          color: `rgba(${color},${0.15 + glow * 0.75})`,
-          fontSize: 'clamp(2rem,5vw,4rem)', fontWeight: 900,
-          userSelect: 'none', transition: 'color .1s', lineHeight: 1,
-        }}>{isLeft ? '←' : '→'}</div>
-      )}
-
       {/* 하이라이트 테두리 */}
       {highlighted && (
         <div style={{
