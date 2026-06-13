@@ -2923,7 +2923,7 @@ export const CELEBRITIES = [
     "weight": 68,
     "age": 33,
     "nationality": "해외",
-    "image": null
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Edison_Huang_%28Tao_Huang%29_at_the_16th_Mnet_Asian_Music_Awards_01.jpg/400px-Edison_Huang_%28Tao_Huang%29_at_the_16th_Mnet_Asian_Music_Awards_01.jpg"
   },
   {
     "id": 211,
@@ -3945,7 +3945,7 @@ export const CELEBRITIES = [
     "weight": 73,
     "age": 29,
     "nationality": "한국",
-    "image": null
+    "image": "/images/celebs/283.png"
   },
   {
     "id": 284,
@@ -5919,7 +5919,7 @@ export const CELEBRITIES = [
     "weight": 62,
     "age": 25,
     "nationality": "한국",
-    "image": null
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/191108_%EC%9D%B4%EB%8C%80%ED%9C%98.jpg/400px-191108_%EC%9D%B4%EB%8C%80%ED%9C%98.jpg"
   },
   {
     "id": 427,
@@ -5933,7 +5933,7 @@ export const CELEBRITIES = [
     "weight": 65,
     "age": 29,
     "nationality": "한국",
-    "image": null
+    "image": "/images/celebs/427.png"
   },
   {
     "id": 428,
@@ -6451,7 +6451,7 @@ export const CELEBRITIES = [
     "weight": 46,
     "age": 34,
     "nationality": "한국",
-    "image": null
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/%ED%85%8C%EC%9D%BC%EC%A6%88%EB%9F%B0%EB%84%88_2015_%EA%B1%B8%EC%8A%A4%EB%8D%B0%EC%9D%B4_%EB%8B%A8%EC%B2%B4_%ED%99%94%EB%B3%B4_%282%29.png/400px-%ED%85%8C%EC%9D%BC%EC%A6%88%EB%9F%B0%EB%84%88_2015_%EA%B1%B8%EC%8A%A4%EB%8D%B0%EC%9D%B4_%EB%8B%A8%EC%B2%B4_%ED%99%94%EB%B3%B4_%282%29.png"
   },
   {
     "id": 465,
@@ -6465,7 +6465,7 @@ export const CELEBRITIES = [
     "weight": 68,
     "age": 49,
     "nationality": "한국",
-    "image": null
+    "image": "/images/celebs/465.jpg"
   },
   {
     "id": 466,
@@ -6479,7 +6479,7 @@ export const CELEBRITIES = [
     "weight": 75,
     "age": 45,
     "nationality": "한국",
-    "image": null
+    "image": "/images/celebs/466.jpg"
   },
   {
     "id": 467,
@@ -6591,7 +6591,7 @@ export const CELEBRITIES = [
     "weight": 73,
     "age": 45,
     "nationality": "한국",
-    "image": null
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Kim_Nam-gil_at_Island_Press_Conference_2022.png/400px-Kim_Nam-gil_at_Island_Press_Conference_2022.png"
   },
   {
     "id": 475,
@@ -6661,7 +6661,7 @@ export const CELEBRITIES = [
     "weight": 72,
     "age": 36,
     "nationality": "한국",
-    "image": null
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/210507_%EA%B0%95%ED%95%98%EB%8A%98.jpg/400px-210507_%EA%B0%95%ED%95%98%EB%8A%98.jpg"
   },
   {
     "id": 480,
@@ -6829,7 +6829,7 @@ export const CELEBRITIES = [
     "weight": 76,
     "age": 37,
     "nationality": "한국",
-    "image": null
+    "image": "/images/celebs/491.jpg"
   },
   {
     "id": 492,
@@ -6899,7 +6899,7 @@ export const CELEBRITIES = [
     "weight": 82,
     "age": 38,
     "nationality": "한국",
-    "image": null
+    "image": "/images/celebs/496.jpg"
   },
   {
     "id": 497,
@@ -6913,7 +6913,7 @@ export const CELEBRITIES = [
     "weight": 55,
     "age": 25,
     "nationality": "한국",
-    "image": null
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/%EC%95%88%EB%91%90%ED%9D%AC.jpg/400px-%EC%95%88%EB%91%90%ED%9D%AC.jpg"
   },
   {
     "id": 498,
@@ -7072,7 +7072,7 @@ export const CELEBRITIES = [
   {
     "id": 509,
     "score": 9195,
-    "image": null,
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Park_Min-young_%EB%B0%95%EB%AF%BC%EC%98%81_2024_04.jpg/400px-Park_Min-young_%EB%B0%95%EB%AF%BC%EC%98%81_2024_04.jpg",
     "name": "박민영",
     "emoji": "🎬",
     "group": "배우",
@@ -7100,7 +7100,7 @@ export const CELEBRITIES = [
   {
     "id": 511,
     "score": 9076,
-    "image": null,
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/%EC%9D%B4%EB%AF%BC%EC%A0%95%2C_%27%EC%B2%AD%EC%88%9C%EB%AF%B8_%EA%B0%80%EB%93%9D%27_%281%29.jpg/400px-%EC%9D%B4%EB%AF%BC%EC%A0%95%2C_%27%EC%B2%AD%EC%88%9C%EB%AF%B8_%EA%B0%80%EB%93%9D%27_%281%29.jpg",
     "name": "이민정",
     "emoji": "🎬",
     "group": "배우",
@@ -7142,7 +7142,7 @@ export const CELEBRITIES = [
   {
     "id": 514,
     "score": 7493,
-    "image": null,
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/%EC%9E%A5%EB%82%98%EB%9D%BC_%28Jang_Na-ra%29_%EB%8C%80%EB%B0%95%EB%B6%80%EB%8F%99%EC%82%B0.jpg/400px-%EC%9E%A5%EB%82%98%EB%9D%BC_%28Jang_Na-ra%29_%EB%8C%80%EB%B0%95%EB%B6%80%EB%8F%99%EC%82%B0.jpg",
     "name": "장나라",
     "emoji": "🎬",
     "group": "배우",
@@ -7184,7 +7184,7 @@ export const CELEBRITIES = [
   {
     "id": 517,
     "score": 8788,
-    "image": null,
+    "image": "/images/celebs/517.png",
     "name": "조여정",
     "emoji": "🎬",
     "group": "배우",
@@ -7282,7 +7282,7 @@ export const CELEBRITIES = [
   {
     "id": 524,
     "score": 7320,
-    "image": null,
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Jeon_Yeo-been_in_November_2024.png/400px-Jeon_Yeo-been_in_November_2024.png",
     "name": "전여빈",
     "emoji": "🎬",
     "group": "배우",
@@ -7310,7 +7310,7 @@ export const CELEBRITIES = [
   {
     "id": 526,
     "score": 7673,
-    "image": null,
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/20240927_Ha_Yeon-soo_%ED%95%98%EC%97%B0%EC%88%98_01.jpg/400px-20240927_Ha_Yeon-soo_%ED%95%98%EC%97%B0%EC%88%98_01.jpg",
     "name": "하연수",
     "emoji": "🎬",
     "group": "배우",
@@ -7352,7 +7352,7 @@ export const CELEBRITIES = [
   {
     "id": 529,
     "score": 8088,
-    "image": null,
+    "image": "/images/celebs/529.jpg",
     "name": "손담비",
     "emoji": "🎵",
     "group": "솔로",

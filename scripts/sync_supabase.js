@@ -85,8 +85,9 @@ async function supabaseReq(method, path, body) {
     const to   = batch[batch.length - 1].id
     process.stdout.write(`  배치 [${b + 1}/${batches.length}] ID ${from}~${to} ... `)
     try {
-      // group은 예약어이므로 키 그대로 전송 (Supabase REST는 큰따옴표 불필요)
-      await supabaseReq('POST', '/celebrities', batch)
+      // score → popularity 컬럼명 매핑, group은 예약어지만 REST에선 그대로 사용
+      const mapped = batch.map(({ score, ...rest }) => ({ ...rest, popularity: score }))
+      await supabaseReq('POST', '/celebrities', mapped)
       ok += batch.length
       console.log(`✅ ${batch.length}건`)
     } catch (e) {

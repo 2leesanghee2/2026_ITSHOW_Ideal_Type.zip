@@ -110,7 +110,7 @@ export default function WelcomePage({ onStart }) {
       }}>
         {[
           { icon: '📷', label: '카메라 허용' },
-          { icon: '🤚', label: '손을 스윙' },
+          { icon: '🤚', label: '손을 콕!' },
           { icon: '🏆', label: '이상형 확정!' },
         ].map((s, i) => (
           <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>

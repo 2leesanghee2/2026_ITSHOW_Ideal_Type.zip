@@ -7,6 +7,29 @@ import LeaderboardPage from './LeaderboardPage'
 import { CELEBRITIES } from './data'
 import { supabase } from './supabase'
 
+function isMobile() {
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+}
+
+function MobileBlock() {
+  return (
+    <div style={{
+      width: '100vw', height: '100vh', background: '#1a0d38',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      color: '#fff', textAlign: 'center', padding: '2rem', boxSizing: 'border-box',
+    }}>
+      <div style={{ fontSize: '4rem', marginBottom: '1.2rem' }}>🖥️</div>
+      <div style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.8rem', color: '#c084fc' }}>
+        PC에서 이용해주세요
+      </div>
+      <div style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
+        이상형.zip은 손 제스처 카메라를 사용해<br />
+        모바일 환경을 지원하지 않습니다.
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
   const [page, setPage] = useState('welcome')
   const [winner, setWinner] = useState(null)
@@ -20,7 +43,10 @@ export default function App() {
     if (!supabase) return
     supabase.from('celebrities').select('*').order('id')
       .then(({ data, error }) => {
-        if (!error && data?.length > 0) setCelebrities(data)
+        if (!error && data?.length > 0) {
+          // Supabase는 popularity 컬럼 사용 → score로 매핑
+          setCelebrities(data.map(c => ({ ...c, score: c.popularity ?? c.score })))
+        }
       })
   }, [])
 
@@ -59,6 +85,8 @@ export default function App() {
     setGameKey(k => k + 1)
     setPage('worldcup')
   }
+
+  if (isMobile()) return <MobileBlock />
 
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: '#1a0d38' }}>
